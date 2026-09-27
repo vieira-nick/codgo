@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Registro de manutenção</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EEF3FB;
+    --card: #FFFFFF;
+    --ink: #002362;
+    --ink-soft: #4C5F82;
+    --border: #CBD8ED;
+    --accent: #0032C3;
+    --accent-ink: #FFFFFF;
+    --danger: #671745;
+    --ok: #64C83C;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #041233; --card: #071B4A; --ink: #EAF1FF; --ink-soft: #9AB0DA;
+      --border: #1B2E5C; --accent: #A0E1FF; --accent-ink: #002362;
+      --danger: #E08772; --ok: #8CE05F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #041233; --card: #071B4A; --ink: #EAF1FF; --ink-soft: #9AB0DA;
+    --border: #1B2E5C; --accent: #A0E1FF; --accent-ink: #002362;
+    --danger: #E08772; --ok: #8CE05F;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: 'Montserrat', system-ui, sans-serif;
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, .label-font { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 800; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 40px 20px 64px; }
+  header { margin-bottom: 28px; }
+  .kicker { color: var(--accent); font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; margin: 0 0 6px; }
+  h1 { font-size: clamp(1.6rem, 4vw, 2.1rem); font-weight: 800; margin: 0 0 8px; }
+  .sub { color: var(--ink-soft); margin: 0; max-width: 46ch; }
+
+  .ticket {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px; position: relative;
+  }
+  .ticket::before {
+    content: ""; position: absolute; left: 24px; right: 24px; bottom: -1px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .field { margin-bottom: 16px; }
+  .field:last-of-type { margin-bottom: 0; }
+  label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+  input, textarea, select {
+    width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px;
+  }
+  input:focus, textarea:focus, select:focus, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+  textarea { resize: vertical; min-height: 76px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+
+  .toggle-group { display: flex; gap: 10px; }
+  .toggle-group label {
+    display: flex; align-items: center; gap: 7px; font-weight: 500;
+    border: 1px solid var(--border); border-radius: 6px; padding: 9px 14px;
+    cursor: pointer; margin: 0; flex: 1; justify-content: center;
+  }
+  .toggle-group input[type="radio"] { width: auto; accent-color: var(--accent); }
+  .toggle-group label:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--card)); }
+
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .menu-grid { grid-template-columns: 1fr; } }
+  .menu-card {
+    display: flex; flex-direction: column; gap: 6px; text-align: left;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px; cursor: pointer; font: inherit; color: var(--ink);
+  }
+  .menu-card:hover { border-color: var(--accent); }
+  .menu-card strong { font-size: 1.05rem; }
+  .menu-card span { color: var(--ink-soft); font-size: 0.88rem; font-weight: 400; }
+  .back-btn { margin-bottom: 20px; }
+
+  .actions { display: flex; align-items: center; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+  button {
+    font: inherit; font-weight: 600; border: none; border-radius: 6px;
+    padding: 11px 18px; cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:disabled { opacity: 0.55; cursor: default; }
+  .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--border); }
+  .status { font-size: 0.88rem; color: var(--ink-soft); min-height: 1.2em; }
+  .status.err { color: var(--danger); }
+  .status.ok { color: var(--ok); }
+
+  .log { margin-top: 44px; }
+  .log-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+  .log-head h2 { font-size: 1.15rem; margin: 0; }
+  .count { color: var(--ink-soft); font-size: 0.88rem; }
+
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .tab {
+    font: inherit; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+    border: 1px solid var(--border); background: var(--card); color: var(--ink-soft);
+    border-radius: 999px; padding: 7px 14px;
+  }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th, td { text-align: left; padding: 10px 14px; font-size: 0.92rem; vertical-align: top; }
+  th { color: var(--ink-soft); font-weight: 600; font-size: 0.8rem; border-bottom: 1px solid var(--border); }
+  tbody tr + tr td { border-top: 1px solid var(--border); }
+  td.num { color: var(--ink-soft); font-variant-numeric: tabular-nums; width: 2.5em; }
+  td.defeito { color: var(--danger); }
+  .manut-aguardando { color: var(--danger); }
+  .manut-em { color: var(--accent); }
+  .manut-retornou { color: var(--ok); }
+
+  .row-actions { display: flex; gap: 6px; white-space: nowrap; }
+  .icon-btn {
+    font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border); background: var(--card); color: var(--ink);
+    border-radius: 6px; padding: 5px 9px;
+  }
+  .icon-btn.danger { color: var(--danger); border-color: var(--danger); }
+
+  .empty { padding: 28px 16px; text-align: center; color: var(--ink-soft); }
+  .db-warn {
+    margin-top: 14px; padding: 10px 12px; border-radius: 6px;
+    background: color-mix(in srgb, var(--danger) 12%, var(--card)); color: var(--danger); font-size: 0.88rem;
+  }
+  .brand-wave { display: block; margin: 40px auto 0; opacity: 0.9; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    align-items: center; justify-content: center; padding: 20px; z-index: 50;
+    display: none;
+  }
+  .modal-overlay:not([hidden]) { display: flex; }
+  .modal {
+    background: var(--card); border-radius: 12px; max-width: 480px; width: 100%;
+    max-height: 88vh; overflow-y: auto; padding: 24px;
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .modal-head h3 { margin: 0; font-size: 1.1rem; }
+  .modal-x {
+    background: none; border: none; font-size: 1.5rem; line-height: 1;
+    cursor: pointer; color: var(--ink-soft); padding: 0 4px;
+  }
+  .modal-view dt { font-weight: 600; font-size: 0.8rem; color: var(--ink-soft); margin-top: 12px; }
+  .modal-view dt:first-child { margin-top: 0; }
+  .modal-view dd { margin: 2px 0 0; }
+  .modal-actions { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="kicker">Dados &amp; Equipamentos</p>
+    <h1>Registro dos equipamentos da secretaria</h1>
+    <p class="sub">Os dados preenchidos nos ajudam a manter a organização.</p>
+  </header>
+
+  <div id="viewHome">
+    <div class="menu-grid">
+      <button type="button" class="menu-card" id="goCadastro">
+        <strong>Registrar equipamento</strong>
+        <span>Cadastre um novo equipamento, com ou sem defeito.</span>
+      </button>
+      <button type="button" class="menu-card" id="goRegistros">
+        <strong>Ver registros</strong>
+        <span>Consulte, edite ou exporte os equipamentos já cadastrados.</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="viewCadastro" hidden>
+    <button type="button" class="btn-ghost back-btn" data-back>← Voltar ao menu</button>
+    <form class="ticket" id="form">
+    <div class="field">
+      <label for="equipamento">Equipamento</label>
+      <input id="equipamento" name="equipamento" type="text" placeholder="Ex.: Notebook Dell, Impressora HP" required>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="local">Local</label>
+        <select id="local" name="local" required>
+          <option value="" disabled selected>Selecione</option>
+          <option>Biblioteca</option>
+          <option>Carrinho</option>
+          <option>Setor das áreas</option>
+          <option>Setor itinerantes</option>
+          <option>Setor diretiva</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="patrimonio">Patrimônio</label>
+        <input id="patrimonio" name="patrimonio" type="text" placeholder="Número do patrimônio" required>
+      </div>
+    </div>
+    <div class="field" id="carrinhoField" hidden>
+      <label for="carrinhoNum">Número do carrinho</label>
+      <select id="carrinhoNum">
+        <option value="" disabled selected>Selecione de 1 a 21</option>
+      </select>
+    </div>
+    <div class="field" id="nomeField" hidden>
+      <label for="nome">Nome</label>
+      <input id="nome" name="nome" type="text" placeholder="Nome do responsável">
+    </div>
+    <div class="field">
+      <label>Apresenta defeito?</label>
+      <div class="toggle-group">
+        <label><input type="radio" name="temDefeito" value="nao" checked> Não</label>
+        <label><input type="radio" name="temDefeito" value="sim"> Sim</label>
+      </div>
+    </div>
+    <div class="field" id="defeitoField" hidden>
+      <label for="defeito">Descreva o defeito apresentado</label>
+      <textarea id="defeito" name="defeito" placeholder="Descreva o problema observado"></textarea>
+    </div>
+    <div class="field" id="manutencaoField" hidden>
+      <label>Já foi para a manutenção?</label>
+      <div class="toggle-group">
+        <label><input type="radio" name="jaManutencao" value="nao" checked> Não</label>
+        <label><input type="radio" name="jaManutencao" value="sim"> Sim</label>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn-primary" id="submitBtn">Salvar registro</button>
+      <span class="status" id="formStatus"></span>
+    </div>
+    <div id="dbWarn" class="db-warn" hidden>Não foi possível conectar à nuvem — verifique sua conexão com a internet.</div>
+  </form>
+  </div>
+
+  <div id="viewRegistros" hidden>
+    <button type="button" class="btn-ghost back-btn" data-back>← Voltar ao menu</button>
+    <section class="log">
+    <div class="log-head">
+      <h2>Registros salvos</h2>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="count" id="count">0 registros</span>
+        <button type="button" class="btn-ghost" id="exportBtn">Exportar para planilha</button>
+      </div>
+    </div>
+    <nav class="tabs" id="tabsNav">
+      <button type="button" class="tab active" data-local="Todos">Todos</button>
+      <button type="button" class="tab" data-local="Biblioteca">Biblioteca</button>
+      <button type="button" class="tab" data-local="Carrinho">Carrinho</button>
+      <button type="button" class="tab" data-local="Setor das áreas">Setor das áreas</button>
+      <button type="button" class="tab" data-local="Setor itinerantes">Setor itinerantes</button>
+      <button type="button" class="tab" data-local="Setor diretiva">Setor diretiva</button>
+    </nav>
+    <div class="table-scroll">
+      <table id="table" hidden>
+        <thead>
+          <tr><th>#</th><th>Equipamento</th><th>Local</th><th>Nome</th><th>Patrimônio</th><th>Defeito</th><th>Manutenção</th><th>Data</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="emptyState">Nenhum registro ainda. Preencha o formulário acima para começar.</div>
+    </div>
+  </section>
+  </div>
+
+  <svg class="brand-wave" width="90" height="32" viewBox="0 0 90 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M2 8c6-8 12-8 18 0s12 8 18 0 12-8 18 0 12 8 18 0" stroke="#0032C3" stroke-width="4" stroke-linecap="round"/>
+    <path d="M2 20c6-8 12-8 18 0s12 8 18 0 12-8 18 0 12 8 18 0" stroke="#0032C3" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+  </svg>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Registro</h3>
+      <button type="button" class="modal-x" id="modalClose" aria-label="Fechar">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyC6xLFN3N-VRgaHpGDibM_LPDykrXDUcxw",
+  authDomain: "recolhimento-de-dados.firebaseapp.com",
+  projectId: "recolhimento-de-dados",
+  storageBucket: "recolhimento-de-dados.firebasestorage.app",
+  messagingSenderId: "1018959623666",
+  appId: "1:1018959623666:web:38698b7bd221519529276b",
+  measurementId: "G-DHJQBLLF2F"
+};
+
+let db = null;
+let entries = [];
+let filtroAtual = 'Todos';
+
+function mostrarView(nome) {
+  document.getElementById('viewHome').hidden = nome !== 'home';
+  document.getElementById('viewCadastro').hidden = nome !== 'cadastro';
+  document.getElementById('viewRegistros').hidden = nome !== 'registros';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.getElementById('goCadastro').addEventListener('click', () => mostrarView('cadastro'));
+document.getElementById('goRegistros').addEventListener('click', () => mostrarView('registros'));
+document.querySelectorAll('[data-back]').forEach(btn => {
+  btn.addEventListener('click', () => mostrarView('home'));
+});
+
+function categoriaDoLocal(local) {
+  if (!local) return local;
+  return local.startsWith('Carrinho') ? 'Carrinho' : local;
+}
+function entradasFiltradas() {
+  if (filtroAtual === 'Todos') return entries;
+  return entries.filter(e => categoriaDoLocal(e.local) === filtroAtual);
+}
+function definirFiltro(local) {
+  filtroAtual = local;
+  document.querySelectorAll('#tabsNav .tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.local === local);
+  });
+  renderTable();
+}
+document.querySelectorAll('#tabsNav .tab').forEach(btn => {
+  btn.addEventListener('click', () => definirFiltro(btn.dataset.local));
+});
+
+function fmtDate(ts) {
+  try { return new Date(ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+  catch (e) { return ''; }
+}
+function escCsv(v) {
+  const s = String(v ?? '');
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function labelManutencao(status) {
+  if (status === 'em_manutencao') return 'Em manutenção';
+  if (status === 'retornou') return 'Retornou';
+  if (status === 'nao_enviado') return 'Aguardando envio';
+  return '—';
+}
+function classeManutencao(status) {
+  if (status === 'em_manutencao') return 'manut-em';
+  if (status === 'retornou') return 'manut-retornou';
+  if (status === 'nao_enviado') return 'manut-aguardando';
+  return '';
+}
+function setStatus(msg, kind) {
+  const el = document.getElementById('formStatus');
+  el.textContent = msg || '';
+  el.className = 'status' + (kind ? ' ' + kind : '');
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tbody');
+  const table = document.getElementById('table');
+  const empty = document.getElementById('emptyState');
+  const lista = entradasFiltradas();
+  document.getElementById('count').textContent = lista.length + (lista.length === 1 ? ' registro' : ' registros');
+  if (!lista.length) {
+    table.hidden = true; empty.hidden = false; tbody.innerHTML = ''; return;
+  }
+  table.hidden = false; empty.hidden = true;
+  tbody.innerHTML = lista.map((e, i) => `
+    <tr>
+      <td class="num">${lista.length - i}</td>
+      <td>${escapeHtml(e.equipamento)}</td>
+      <td>${escapeHtml(e.local)}</td>
+      <td>${escapeHtml(e.nome || '—')}</td>
+      <td>${escapeHtml(e.patrimonio)}</td>
+      <td class="${e.defeito === 'Não' ? '' : 'defeito'}">${escapeHtml(e.defeito)}</td>
+      <td class="${classeManutencao(e.statusManutencao)}">${labelManutencao(e.statusManutencao)}</td>
+      <td>${fmtDate(e.criadoEm)}</td>
+      <td class="row-actions">
+        <button type="button" class="icon-btn" data-action="ver" data-id="${e.id}">Ver</button>
+        <button type="button" class="icon-btn" data-action="editar" data-id="${e.id}">Editar</button>
+        <button type="button" class="icon-btn danger" data-action="apagar" data-id="${e.id}">Apagar</button>
+      </td>
+    </tr>`).join('');
+}
+
+const carrinhoSelect = document.getElementById('carrinhoNum');
+for (let n = 1; n <= 21; n++) {
+  const opt = document.createElement('option');
+  opt.value = String(n); opt.textContent = String(n);
+  carrinhoSelect.appendChild(opt);
+}
+
+const localSelect = document.getElementById('local');
+const carrinhoField = document.getElementById('carrinhoField');
+const nomeField = document.getElementById('nomeField');
+const nomeInput = document.getElementById('nome');
+const gruposComNome = ['Setor itinerantes', 'Setor das áreas', 'Setor diretiva'];
+localSelect.addEventListener('change', () => {
+  const isCarrinho = localSelect.value === 'Carrinho';
+  carrinhoField.hidden = !isCarrinho;
+  carrinhoSelect.required = isCarrinho;
+  if (!isCarrinho) carrinhoSelect.value = '';
+
+  const precisaNome = gruposComNome.includes(localSelect.value);
+  nomeField.hidden = !precisaNome;
+  nomeInput.required = precisaNome;
+  if (!precisaNome) nomeInput.value = '';
+});
+
+const defeitoField = document.getElementById('defeitoField');
+const defeitoInput = document.getElementById('defeito');
+const manutencaoField = document.getElementById('manutencaoField');
+document.querySelectorAll('input[name="temDefeito"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const temDefeito = document.querySelector('input[name="temDefeito"]:checked').value === 'sim';
+    defeitoField.hidden = !temDefeito;
+    defeitoInput.required = temDefeito;
+    manutencaoField.hidden = !temDefeito;
+    if (!temDefeito) {
+      defeitoInput.value = '';
+      document.querySelector('input[name="jaManutencao"][value="nao"]').checked = true;
+    }
+  });
+});
+
+const modalOverlay = document.getElementById('modalOverlay');
+const modalBody = document.getElementById('modalBody');
+const modalTitle = document.getElementById('modalTitle');
+function fecharModal() {
+  modalOverlay.hidden = true;
+  modalBody.innerHTML = '';
+}
+document.getElementById('modalClose').addEventListener('click', fecharModal);
+modalOverlay.addEventListener('click', (ev) => { if (ev.target === modalOverlay) fecharModal(); });
+
+document.getElementById('tbody').addEventListener('click', (ev) => {
+  const btn = ev.target.closest('button[data-action]');
+  if (!btn) return;
+  const reg = entries.find(e => String(e.id) === String(btn.dataset.id));
+  if (!reg) return;
+  if (btn.dataset.action === 'ver') abrirVisualizar(reg);
+  else if (btn.dataset.action === 'editar') abrirEditar(reg);
+  else if (btn.dataset.action === 'apagar') apagarRegistro(reg);
+});
+
+function abrirVisualizar(reg) {
+  modalTitle.textContent = 'Detalhes do registro';
+  const temDefeito = reg.defeito !== 'Não';
+  let manutencaoHtml = '';
+  let acaoManutencaoHtml = '';
+  if (temDefeito) {
+    manutencaoHtml = `
+      <dt>Status da manutenção</dt><dd>${labelManutencao(reg.statusManutencao)}</dd>
+      ${reg.enviadoManutencaoEm ? `<dt>Enviado para manutenção em</dt><dd>${fmtDate(reg.enviadoManutencaoEm)}</dd>` : ''}
+      ${reg.retornoManutencaoEm ? `<dt>Retornou da manutenção em</dt><dd>${fmtDate(reg.retornoManutencaoEm)}</dd>` : ''}`;
+    if (!reg.statusManutencao || reg.statusManutencao === 'nao_enviado') {
+      acaoManutencaoHtml = `<button type="button" class="btn-primary" id="btnEnviarManutencao">Marcar enviado p/ manutenção</button>`;
+    } else if (reg.statusManutencao === 'em_manutencao') {
+      acaoManutencaoHtml = `<button type="button" class="btn-primary" id="btnRetornoManutencao">Marcar retorno da manutenção</button>`;
+    }
+  }
+  modalBody.innerHTML = `
+    <dl class="modal-view">
+      <dt>Equipamento</dt><dd>${escapeHtml(reg.equipamento)}</dd>
+      <dt>Local</dt><dd>${escapeHtml(reg.local)}</dd>
+      <dt>Nome</dt><dd>${escapeHtml(reg.nome || '—')}</dd>
+      <dt>Patrimônio</dt><dd>${escapeHtml(reg.patrimonio)}</dd>
+      <dt>Apresenta defeito?</dt><dd>${temDefeito ? 'Sim' : 'Não'}</dd>
+      ${temDefeito ? `<dt>Descrição do defeito</dt><dd>${escapeHtml(reg.defeito)}</dd>` : ''}
+      ${manutencaoHtml}
+      <dt>Data do registro</dt><dd>${fmtDate(reg.criadoEm)}</dd>
+    </dl>
+    <div class="modal-actions">
+      ${acaoManutencaoHtml}
+      <button type="button" class="btn-ghost" id="modalOkBtn">Fechar</button>
+    </div>`;
+  document.getElementById('modalOkBtn').addEventListener('click', fecharModal);
+  const btnEnviar = document.getElementById('btnEnviarManutencao');
+  if (btnEnviar) btnEnviar.addEventListener('click', () => marcarEnviadoManutencao(reg));
+  const btnRetorno = document.getElementById('btnRetornoManutencao');
+  if (btnRetorno) btnRetorno.addEventListener('click', () => marcarRetornoManutencao(reg));
+  modalOverlay.hidden = false;
+}
+
+async function marcarEnviadoManutencao(reg) {
+  try {
+    await db.collection('registros').doc(reg.id).update({ statusManutencao: 'em_manutencao', enviadoManutencaoEm: Date.now() });
+    fecharModal();
+  } catch (e) {
+    console.error(e);
+    setStatus('Não foi possível atualizar o status.', 'err');
+  }
+}
+
+async function marcarRetornoManutencao(reg) {
+  try {
+    await db.collection('registros').doc(reg.id).update({ statusManutencao: 'retornou', retornoManutencaoEm: Date.now() });
+    fecharModal();
+  } catch (e) {
+    console.error(e);
+    setStatus('Não foi possível atualizar o status.', 'err');
+  }
+}
+
+function abrirEditar(reg) {
+  modalTitle.textContent = 'Editar registro';
+  const ehCarrinho = reg.local && reg.local.startsWith('Carrinho');
+  const carrinhoNum = ehCarrinho ? reg.local.split(' ')[1] : '';
+  const localBase = ehCarrinho ? 'Carrinho' : reg.local;
+  const precisaNomeInicial = gruposComNome.includes(localBase);
+  const temDefeitoInicial = reg.defeito !== 'Não';
+
+  modalBody.innerHTML = `
+    <form id="editForm">
+      <div class="field">
+        <label for="edit-equipamento">Equipamento</label>
+        <input id="edit-equipamento" type="text" value="${escapeHtml(reg.equipamento)}" required>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="edit-local">Local</label>
+          <select id="edit-local" required>
+            <option value="Biblioteca">Biblioteca</option>
+            <option value="Carrinho">Carrinho</option>
+            <option value="Setor das áreas">Setor das áreas</option>
+            <option value="Setor itinerantes">Setor itinerantes</option>
+            <option value="Setor diretiva">Setor diretiva</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="edit-patrimonio">Patrimônio</label>
+          <input id="edit-patrimonio" type="text" value="${escapeHtml(reg.patrimonio)}" required>
+        </div>
+      </div>
+      <div class="field" id="edit-carrinhoField" ${ehCarrinho ? '' : 'hidden'}>
+        <label for="edit-carrinhoNum">Número do carrinho</label>
+        <select id="edit-carrinhoNum"></select>
+      </div>
+      <div class="field" id="edit-nomeField" ${precisaNomeInicial ? '' : 'hidden'}>
+        <label for="edit-nome">Nome</label>
+        <input id="edit-nome" type="text" value="${escapeHtml(reg.nome || '')}">
+      </div>
+      <div class="field">
+        <label>Apresenta defeito?</label>
+        <div class="toggle-group">
+          <label><input type="radio" name="edit-temDefeito" value="nao" ${!temDefeitoInicial ? 'checked' : ''}> Não</label>
+          <label><input type="radio" name="edit-temDefeito" value="sim" ${temDefeitoInicial ? 'checked' : ''}> Sim</label>
+        </div>
+      </div>
+      <div class="field" id="edit-defeitoField" ${temDefeitoInicial ? '' : 'hidden'}>
+        <label for="edit-defeito">Descreva o defeito apresentado</label>
+        <textarea id="edit-defeito">${temDefeitoInicial ? escapeHtml(reg.defeito) : ''}</textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary">Salvar alterações</button>
+        <button type="button" class="btn-ghost" id="editCancel">Cancelar</button>
+      </div>
+      <span class="status" id="editStatus"></span>
+    </form>`;
+
+  const editLocalSelect = document.getElementById('edit-local');
+  const editCarrinhoField = document.getElementById('edit-carrinhoField');
+  const editCarrinhoSelect = document.getElementById('edit-carrinhoNum');
+  const editNomeField = document.getElementById('edit-nomeField');
+  const editNomeInput = document.getElementById('edit-nome');
+  const editDefeitoField = document.getElementById('edit-defeitoField');
+  const editDefeitoInput = document.getElementById('edit-defeito');
+
+  for (let n = 1; n <= 21; n++) {
+    const opt = document.createElement('option');
+    opt.value = String(n); opt.textContent = String(n);
+    if (String(n) === carrinhoNum) opt.selected = true;
+    editCarrinhoSelect.appendChild(opt);
+  }
+  editLocalSelect.value = localBase;
+
+  editLocalSelect.addEventListener('change', () => {
+    const isCarrinho = editLocalSelect.value === 'Carrinho';
+    editCarrinhoField.hidden = !isCarrinho;
+    const precisaNome = gruposComNome.includes(editLocalSelect.value);
+    editNomeField.hidden = !precisaNome;
+    if (!precisaNome) editNomeInput.value = '';
+  });
+
+  document.querySelectorAll('input[name="edit-temDefeito"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const tem = document.querySelector('input[name="edit-temDefeito"]:checked').value === 'sim';
+      editDefeitoField.hidden = !tem;
+      if (!tem) editDefeitoInput.value = '';
+    });
+  });
+
+  document.getElementById('editCancel').addEventListener('click', fecharModal);
+
+  document.getElementById('editForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const editStatus = document.getElementById('editStatus');
+    const equipamento = document.getElementById('edit-equipamento').value.trim();
+    const localGrupo = editLocalSelect.value;
+    const patrimonio = document.getElementById('edit-patrimonio').value.trim();
+    const temDefeito = document.querySelector('input[name="edit-temDefeito"]:checked').value === 'sim';
+    const defeitoDesc = editDefeitoInput.value.trim();
+    const nome = editNomeInput.value.trim();
+
+    if (!equipamento || !localGrupo || !patrimonio) {
+      editStatus.textContent = 'Preencha todos os campos.'; editStatus.className = 'status err'; return;
+    }
+    if (localGrupo === 'Carrinho' && !editCarrinhoSelect.value) {
+      editStatus.textContent = 'Selecione o número do carrinho.'; editStatus.className = 'status err'; return;
+    }
+    if (gruposComNome.includes(localGrupo) && !nome) {
+      editStatus.textContent = 'Informe o nome.'; editStatus.className = 'status err'; return;
+    }
+    if (temDefeito && !defeitoDesc) {
+      editStatus.textContent = 'Descreva o defeito apresentado.'; editStatus.className = 'status err'; return;
+    }
+
+    const local = localGrupo === 'Carrinho' ? `Carrinho ${editCarrinhoSelect.value}` : localGrupo;
+    const defeito = temDefeito ? defeitoDesc : 'Não';
+    const payload = { equipamento, local, nome, patrimonio, defeito };
+    if (defeito === 'Não') {
+      payload.statusManutencao = null;
+      payload.enviadoManutencaoEm = null;
+      payload.retornoManutencaoEm = null;
+    }
+
+    try {
+      await db.collection('registros').doc(reg.id).update(payload);
+      fecharModal();
+      definirFiltro(localGrupo);
+    } catch (err) {
+      console.error(err);
+      editStatus.textContent = 'Não foi possível salvar. Tente novamente.';
+      editStatus.className = 'status err';
+    }
+  });
+
+  modalOverlay.hidden = false;
+}
+
+async function apagarRegistro(reg) {
+  if (!confirm(`Apagar o registro de "${reg.equipamento}" (${reg.local})? Essa ação não pode ser desfeita.`)) return;
+  try {
+    await db.collection('registros').doc(reg.id).delete();
+  } catch (e) {
+    console.error(e);
+    setStatus('Não foi possível apagar o registro.', 'err');
+  }
+}
+
+function init() {
+  try {
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('SUA_')) {
+      throw new Error('Configuração do Firebase não preenchida.');
+    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+
+    db.collection('registros').orderBy('criadoEm', 'desc').limit(500).onSnapshot(
+      (snap) => {
+        entries = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+        renderTable();
+      },
+      (err) => {
+        console.error('db snapshot error', err);
+        setStatus('Erro ao carregar registros. Veja o console para detalhes.', 'err');
+      }
+    );
+  } catch (e) {
+    console.error(e);
+    document.getElementById('dbWarn').hidden = false;
+    document.getElementById('submitBtn').disabled = true;
+  }
+}
+
+document.getElementById('form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  if (!db) return;
+  const equipamento = document.getElementById('equipamento').value.trim();
+  const localGrupo = localSelect.value;
+  const patrimonio = document.getElementById('patrimonio').value.trim();
+  const temDefeito = document.querySelector('input[name="temDefeito"]:checked').value === 'sim';
+  const defeitoDesc = defeitoInput.value.trim();
+
+  if (!equipamento || !localGrupo || !patrimonio) {
+    setStatus('Preencha todos os campos.', 'err'); return;
+  }
+  if (localGrupo === 'Carrinho' && !carrinhoSelect.value) {
+    setStatus('Selecione o número do carrinho.', 'err'); return;
+  }
+  const nome = nomeInput.value.trim();
+  if (gruposComNome.includes(localGrupo) && !nome) {
+    setStatus('Informe o nome.', 'err'); return;
+  }
+  if (temDefeito && !defeitoDesc) {
+    setStatus('Descreva o defeito apresentado.', 'err'); return;
+  }
+
+  const local = localGrupo === 'Carrinho' ? `Carrinho ${carrinhoSelect.value}` : localGrupo;
+  const defeito = temDefeito ? defeitoDesc : 'Não';
+  const jaManutencao = temDefeito && document.querySelector('input[name="jaManutencao"]:checked').value === 'sim';
+
+  const registro = { equipamento, local, nome, patrimonio, defeito, criadoEm: Date.now() };
+  if (temDefeito) {
+    registro.statusManutencao = jaManutencao ? 'em_manutencao' : 'nao_enviado';
+    registro.enviadoManutencaoEm = jaManutencao ? Date.now() : null;
+    registro.retornoManutencaoEm = null;
+  } else {
+    registro.statusManutencao = null;
+    registro.enviadoManutencaoEm = null;
+    registro.retornoManutencaoEm = null;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  setStatus('Salvando…');
+  try {
+    await db.collection('registros').add(registro);
+    ev.target.reset();
+    carrinhoField.hidden = true;
+    defeitoField.hidden = true;
+    manutencaoField.hidden = true;
+    nomeField.hidden = true;
+    setStatus('Registro salvo.', 'ok');
+    definirFiltro(localGrupo);
+    mostrarView('registros');
+  } catch (e) {
+    console.error(e);
+    setStatus('Não foi possível salvar. Tente novamente.', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const lista = entradasFiltradas();
+  if (!lista.length) { setStatus('Nenhum registro para exportar.', 'err'); return; }
+  const header = ['Equipamento', 'Local', 'Nome', 'Patrimônio', 'Defeito', 'Data'];
+  const linhas = lista.slice().reverse().map(e => [e.equipamento, e.local, e.nome || '', e.patrimonio, e.defeito, fmtDate(e.criadoEm)]);
+  const csv = '\uFEFF' + [header, ...linhas].map(r => r.map(escCsv).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const sufixo = filtroAtual === 'Todos' ? '' : '-' + filtroAtual.toLowerCase().replace(/\s+/g, '-');
+  a.href = url;
+  a.download = `registros-equipamentos${sufixo}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+init();
+</script>
+</body>
+</html>
